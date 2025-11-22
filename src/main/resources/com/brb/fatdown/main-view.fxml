@@ -31,52 +31,58 @@
                 <Insets top="12" right="12" bottom="12" left="12"/>
             </padding>
 
-            <Label text="Name:" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+            <Label text="Имя:" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
             <TextField fx:id="nameField" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
 
-            <Label text="Sex:" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
+            <Label text="Пол:" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
             <ChoiceBox fx:id="sexChoice" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
 
-            <Label text="Age:" GridPane.rowIndex="2" GridPane.columnIndex="0"/>
+            <Label text="Возраст:" GridPane.rowIndex="2" GridPane.columnIndex="0"/>
             <TextField fx:id="ageField" GridPane.rowIndex="2" GridPane.columnIndex="1"/>
 
-            <Label text="Weight (kg):" GridPane.rowIndex="3" GridPane.columnIndex="0"/>
+            <Label text="Вес (kg):" GridPane.rowIndex="3" GridPane.columnIndex="0"/>
             <TextField fx:id="weightField" GridPane.rowIndex="3" GridPane.columnIndex="1"/>
 
-            <Label text="Height (cm):" GridPane.rowIndex="4" GridPane.columnIndex="0"/>
+            <Label text="Рост (cm):" GridPane.rowIndex="4" GridPane.columnIndex="0"/>
             <TextField fx:id="heightField" GridPane.rowIndex="4" GridPane.columnIndex="1"/>
 
-            <Label text="Waist (cm):" GridPane.rowIndex="5" GridPane.columnIndex="0"/>
+            <Label text="Талия (cm):" GridPane.rowIndex="5" GridPane.columnIndex="0"/>
             <TextField fx:id="waistField" GridPane.rowIndex="5" GridPane.columnIndex="1"/>
 
-            <Label text="Neck (cm):" GridPane.rowIndex="6" GridPane.columnIndex="0"/>
+            <Label text="Шея (cm):" GridPane.rowIndex="6" GridPane.columnIndex="0"/>
             <TextField fx:id="neckField" GridPane.rowIndex="6" GridPane.columnIndex="1"/>
 
-            <Label fx:id="hipLabel" text="Hip (cm):" GridPane.rowIndex="7" GridPane.columnIndex="0"/>
+            <Label fx:id="hipLabel" text="Бёдра (cm):" GridPane.rowIndex="7" GridPane.columnIndex="0"/>
             <TextField fx:id="hipField" GridPane.rowIndex="7" GridPane.columnIndex="1"/>
 
             <Separator GridPane.rowIndex="8" GridPane.columnSpan="2"/>
 
-            <Label text="Current body fat:" GridPane.rowIndex="9" GridPane.columnIndex="0"/>
+            <Label text="Текущий % жира:" GridPane.rowIndex="9" GridPane.columnIndex="0"/>
             <Label fx:id="currentBfLabel" text="-" GridPane.rowIndex="9" GridPane.columnIndex="1"/>
 
-            <Label text="Target body fat:" GridPane.rowIndex="10" GridPane.columnIndex="0"/>
+            <Label text="Целевой % жира:" GridPane.rowIndex="10" GridPane.columnIndex="0"/>
             <HBox spacing="8" GridPane.rowIndex="10" GridPane.columnIndex="1" alignment="CENTER_LEFT">
                 <Slider fx:id="targetSlider" prefWidth="300"/>
                 <Label fx:id="sliderValueLabel" text="-"/>
             </HBox>
 
-            <Label text="Target date:" GridPane.rowIndex="11" GridPane.columnIndex="0"/>
+            <Label text="Целевая дата:" GridPane.rowIndex="11" GridPane.columnIndex="0"/>
             <DatePicker fx:id="targetDatePicker" GridPane.rowIndex="11" GridPane.columnIndex="1"/>
 
-            <Label text="Modes (choose):" GridPane.rowIndex="12" GridPane.columnIndex="0"/>
+            <Label text="Активность:" GridPane.rowIndex="12" GridPane.columnIndex="0"/>
             <VBox GridPane.rowIndex="12" GridPane.columnIndex="1">
                 <CheckBox fx:id="neatBox" text="NEAT (≈95 bpm)"/>
                 <CheckBox fx:id="lissBox" text="LISS (≈110 bpm)"/>
                 <CheckBox fx:id="mediumBox" text="Medium (≈130 bpm)"/>
             </VBox>
 
-            <Button fx:id="calculateButton" text="Рассчитать" GridPane.rowIndex="13" GridPane.columnIndex="1"/>
+            <Label text="Коэф. активности:" GridPane.rowIndex="13" GridPane.columnIndex="0"/>
+            <ChoiceBox fx:id="coefficientChoiceBox" GridPane.rowIndex="13" GridPane.columnIndex="1"/>
+
+            <Button fx:id="calculateButton" text="Рассчитать" GridPane.rowIndex="14" GridPane.columnIndex="1"/>
+
+            <Label text="Расход в обычной жизни: " GridPane.rowIndex="15" GridPane.columnIndex="0"/>
+            <Label fx:id="tdee" text="-" GridPane.rowIndex="15" GridPane.columnIndex="1"/>
 
         </GridPane>
     </center>
@@ -90,15 +96,25 @@
             <Label fx:id="fatKgLabel" text="Жир к потере: -"/>
             <Label fx:id="fatKcalLabel" text="Эквивалент: -"/>
             <Separator/>
-            <Label text="Required training time:" style="-fx-font-weight: bold;"/>
+            <Label text="Необходимо всего времени:" style="-fx-font-weight: bold;"/>
             <Label fx:id="neatTimeLabel" text="NEAT: -"/>
             <Label fx:id="lissTimeLabel" text="LISS: -"/>
             <Label fx:id="mediumTimeLabel" text="Medium: -"/>
             <Separator/>
-            <Label text="Required training time per day:" style="-fx-font-weight: bold;"/>
+            <Label text="Требуется времени каждый день:" style="-fx-font-weight: bold;"/>
             <Label fx:id="perDayNeat" text="NEAT: -"/>
             <Label fx:id="perDayLiss" text="LISS: -"/>
             <Label fx:id="perDayMedium" text="Medium: -"/>
+            <Separator/>
+            <Label text="Кол-во углей за час тренировки:" style="-fx-font-weight: bold;"/>
+            <Label fx:id="carbNeatPerHour" text="NEAT: -"/>
+            <Label fx:id="carbLissPerHour" text="LISS: -"/>
+            <Label fx:id="carbMedPerHour" text="Medium: -"/>
+            <Separator/>
+            <Label text="Кол-во углей за день тренировки:" style="-fx-font-weight: bold;"/>
+            <Label fx:id="carbNeatPerDay" text="NEAT: -"/>
+            <Label fx:id="carbLissPerDay" text="LISS: -"/>
+            <Label fx:id="carbMedPerDay" text="Medium: -"/>
         </VBox>
     </right>
 </BorderPane>

@@ -12,10 +12,16 @@ import lombok.Setter;
 public class FatBurnResult {
     private double fatKgToLose;
     private double kcalTotal;
-    private double hoursNeat;
-    private double hoursLiss;
-    private double hoursMedium;
-    private double neatPerDay;
-    private double lissPerDay;
-    private double mediumPerDay;
+    private double fatHoursNeat;
+    private double fatHoursLiss;
+    private double fatHoursMedium;
+    private double fatNeatPerDay;
+    private double fatLissPerDay;
+    private double fatMediumPerDay;
+    private double carbNeatPerHour;
+    private double carbLissPerHour;
+    private double carbMediumPerHour;
+    private double carbNeatPerDay;
+    private double carbLissPerDay;
+    private double carbMediumPerDay;
 }

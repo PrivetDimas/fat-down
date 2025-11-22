@@ -28,7 +28,7 @@ public class FatDownApplication extends Application {
             }
         });
 
-        Scene scene = new Scene(loader.load(), 740, 530);
+        Scene scene = new Scene(loader.load(), 745, 570);
         stage.setTitle("FatDown");
         stage.setScene(scene);
         stage.show();

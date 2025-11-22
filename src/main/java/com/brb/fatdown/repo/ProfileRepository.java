@@ -38,10 +38,12 @@ public class ProfileRepository {
                 try {
                     Profile p = mapper.readValue(f, Profile.class);
                     out.add(p);
-                } catch (IOException _) {}
+                } catch (IOException _) {
+                    //ignore
+                }
             }
             return out;
-        } catch (Exception e) {
+        } catch (Exception _) {
             return new ArrayList<>();
         }
     }

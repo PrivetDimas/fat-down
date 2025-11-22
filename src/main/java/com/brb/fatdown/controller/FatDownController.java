@@ -1,6 +1,8 @@
 package com.brb.fatdown.controller;
 
 
+import com.brb.fatdown.model.ActivityMode;
+import com.brb.fatdown.model.CoefficientOfActivity;
 import com.brb.fatdown.model.FatBurnResult;
 import com.brb.fatdown.model.Profile;
 import com.brb.fatdown.model.Sex;
@@ -26,6 +28,8 @@ import java.util.List;
 import java.util.Optional;
 
 public class FatDownController {
+    private static final String KCAL_AND_PFC_TEMPLATE = "%s: %.0f ккал или %.1f гр";
+    private static final String SLIDER_PATTERN = "%.1f%%";
     private final ProfileRepository repo;
     private final FatDownService service;
 
@@ -41,7 +45,6 @@ public class FatDownController {
     private Button newProfileButton;
     @FXML
     private Button saveProfileButton;
-
 
     //Left/center
     @FXML
@@ -79,6 +82,8 @@ public class FatDownController {
     @FXML
     private CheckBox mediumBox;
     @FXML
+    private ChoiceBox<String> coefficientChoiceBox;
+    @FXML
     private Button calculateButton;
 
     //Right
@@ -100,6 +105,21 @@ public class FatDownController {
     private Label perDayLiss;
     @FXML
     private Label perDayMedium;
+    @FXML
+    private Label carbNeatPerHour;
+    @FXML
+    private Label carbLissPerHour;
+    @FXML
+    private Label carbMedPerHour;
+    @FXML
+    private Label carbNeatPerDay;
+    @FXML
+    private Label carbLissPerDay;
+    @FXML
+    private Label carbMedPerDay;
+    @FXML
+    private Label tdee;
+
 
     private Profile current;
 
@@ -107,6 +127,7 @@ public class FatDownController {
     @FXML
     public void initialize() {
         sexChoice.getItems().addAll(Sex.values());
+        coefficientChoiceBox.getItems().addAll(CoefficientOfActivity.getProfessionExamples());
 
         List<Profile> all = repo.loadAllProfiles();
         profileCombo.getItems().addAll(all);
@@ -156,13 +177,13 @@ public class FatDownController {
         hipField.textProperty().addListener(fieldListener);
         sexChoice.getSelectionModel().selectedItemProperty().addListener((o, oldV, newV) -> recomputeCurrentBfAndAdjustSlider());
 
-        targetSlider.valueProperty().addListener((o, oldV, newV) -> sliderValueLabel.setText(String.format("%.1f%%", newV.doubleValue())));
+        targetSlider.valueProperty().addListener((o, oldV, newV) -> sliderValueLabel.setText(String.format(SLIDER_PATTERN, newV.doubleValue())));
 
         calculateButton.setOnAction(e -> onCalculate());
         newProfileButton.setOnAction(e -> onNewProfile());
         saveProfileButton.setOnAction(e -> onSaveProfile());
 
-        sliderValueLabel.setText(String.format("%.1f%%", targetSlider.getValue()));
+        sliderValueLabel.setText(String.format(SLIDER_PATTERN, targetSlider.getValue()));
     }
 
     private void setCurrentProfile(Profile p) {
@@ -205,13 +226,13 @@ public class FatDownController {
                 return;
             }
 
-            bf = Math.max(2.0, Math.min(60.0, bf));
+            bf = Math.clamp(bf, 2.0, 60.0);
 
             currentBfLabel.setText(String.format("%.2f%%", bf));
             targetSlider.setMin(5.0);
             targetSlider.setMax(Math.max(5.0, bf));
             if (targetSlider.getValue() > targetSlider.getMax()) targetSlider.setValue(targetSlider.getMax());
-            sliderValueLabel.setText(String.format("%.1f%%", targetSlider.getValue()));
+            sliderValueLabel.setText(String.format(SLIDER_PATTERN, targetSlider.getValue()));
 
             if (p.getSex() == Sex.MALE) {
                 hipField.setVisible(false);
@@ -308,21 +329,59 @@ public class FatDownController {
 
         framePerDayTime(res, neatBox.isSelected(), lissBox.isSelected(), mediumBox.isSelected());
 
+        frameCarbsPerHour(res, neatBox.isSelected(), lissBox.isSelected(), mediumBox.isSelected());
+
+        frameCarbsPerDay(res, neatBox.isSelected(), lissBox.isSelected(), mediumBox.isSelected());
+
+        frameBmrAndPFC(p.getWeightKg(), p.getHeightCm(), p.getAge(),
+                CoefficientOfActivity.getByProfessionExample(coefficientChoiceBox.getSelectionModel().getSelectedItem()));
+
         repo.setLastUsedProfileId(p.getId());
     }
 
     private void frameFullTime(final FatBurnResult res, final boolean neatBoxSelected, final boolean lissBoxSelected,
                                final boolean mediumBoxSelected) {
-        neatTimeLabel.setText(neatBoxSelected ? formatHours(res.getHoursNeat(), "NEAT") : "");
-        lissTimeLabel.setText(lissBoxSelected ? formatHours(res.getHoursLiss(), "LISS") : "");
-        mediumTimeLabel.setText(mediumBoxSelected ? formatHours(res.getHoursMedium(), "MEDIUM") : "");
+        neatTimeLabel.setText(neatBoxSelected ? formatHours(res.getFatHoursNeat(), ActivityMode.NEAT.name()) : "");
+        lissTimeLabel.setText(lissBoxSelected ? formatHours(res.getFatHoursLiss(), ActivityMode.LISS.name()) : "");
+        mediumTimeLabel.setText(mediumBoxSelected ? formatHours(res.getFatHoursMedium(), ActivityMode.MEDIUM.name()) : "");
     }
 
     private void framePerDayTime(final FatBurnResult res, final boolean neatBoxSelected, final boolean lissBoxSelected,
                                  final boolean mediumBoxSelected) {
-        perDayNeat.setText(neatBoxSelected ? formatHours(res.getNeatPerDay(), "NEAT") : "");
-        perDayLiss.setText(lissBoxSelected ? formatHours(res.getLissPerDay(), "LISS") : "");
-        perDayMedium.setText(mediumBoxSelected ? formatHours(res.getMediumPerDay(), "MEDIUM") : "");
+        perDayNeat.setText(neatBoxSelected ? formatHours(res.getFatNeatPerDay(), ActivityMode.NEAT.name()) : "");
+        perDayLiss.setText(lissBoxSelected ? formatHours(res.getFatLissPerDay(), ActivityMode.LISS.name()) : "");
+        perDayMedium.setText(mediumBoxSelected ? formatHours(res.getFatMediumPerDay(), ActivityMode.MEDIUM.name()) : "");
+    }
+
+    private void frameCarbsPerHour(final FatBurnResult res, final boolean neatBoxSelected, final boolean lissBoxSelected,
+                                   final boolean mediumBoxSelected) {
+        carbNeatPerHour.setText(neatBoxSelected ? String.format(KCAL_AND_PFC_TEMPLATE, ActivityMode.NEAT.name(), res.getCarbNeatPerHour(),
+                res.getCarbNeatPerHour() / 4.0) : "");
+        carbLissPerHour.setText(lissBoxSelected ? String.format(KCAL_AND_PFC_TEMPLATE, ActivityMode.LISS.name(), res.getCarbLissPerHour(),
+                res.getCarbLissPerHour() / 4.0) : "");
+        carbMedPerHour.setText(mediumBoxSelected ? String.format(KCAL_AND_PFC_TEMPLATE, ActivityMode.MEDIUM.name(), res.getCarbMediumPerHour(),
+                res.getCarbMediumPerHour() / 4.0) : "");
+    }
+
+    private void frameCarbsPerDay(final FatBurnResult res, final boolean neatBoxSelected, final boolean lissBoxSelected,
+                                  final boolean mediumBoxSelected) {
+        carbNeatPerDay.setText(neatBoxSelected ? String.format(KCAL_AND_PFC_TEMPLATE, ActivityMode.NEAT.name(), res.getCarbNeatPerDay(),
+                res.getCarbNeatPerDay() / 4.0) : "");
+        carbLissPerDay.setText(lissBoxSelected ? String.format(KCAL_AND_PFC_TEMPLATE, ActivityMode.LISS.name(), res.getCarbLissPerDay(),
+                res.getCarbLissPerDay() / 4.0) : "");
+        carbMedPerDay.setText(mediumBoxSelected ? String.format(KCAL_AND_PFC_TEMPLATE, ActivityMode.MEDIUM.name(), res.getCarbMediumPerDay(),
+                res.getCarbMediumPerDay() / 4.0) : "");
+    }
+
+    private void frameBmrAndPFC(final double weight, final double height, final int age,
+                                final CoefficientOfActivity coefficientOfActivity) {
+        double dailyKcal = (10 * weight + 6.25 * height - 5 * age + 5) * coefficientOfActivity.getCoefficient();
+        double leanMass = weight * (1 - 0.1565);
+        double proteinForLean = 2.6 * leanMass;
+        double fatForLean = 0.6 * weight;
+        double carbForLean = (dailyKcal - (proteinForLean * 4 + fatForLean * 9)) / 4;
+        this.tdee.setText(String.format("%.0f ккал, %.1f гр белка, %.1f гр жиров, %.1f гр углеводов", dailyKcal, proteinForLean, fatForLean,
+                carbForLean));
     }
 
     private String formatHours(double hours, String ex) {
