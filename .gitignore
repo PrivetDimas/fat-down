@@ -1,0 +1,53 @@
+# Build artifacts
+/target/
+/build/
+/out/
+
+# Maven wrapper — commit these, so include explicitly
+!/mvnw
+!/mvnw.cmd
+!/.mvn/wrapper/maven-wrapper.jar
+!/.mvn/wrapper/maven-wrapper.properties
+
+### IntelliJ IDEA ###
+/.idea/
+/*.iml
+/*.iws
+/.project
+/.classpath
+/.settings/
+
+# VS Code
+.vscode/
+
+# Logs, temp
+*.log
+logs/
+tmp/
+*.tmp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Secrets / keystores
+*.jks
+*.keystore
+*.p12
+*.pem
+*.key
+.env
+.env.*
+
+# Node
+node_modules/
+
+# Generated / compiled
+*.class
+*.jar
+*.war
+*.ear
+
+# Optional: generated sources (если не хотите коммитить)
+/target/generated-sources/
+/build/generated/
