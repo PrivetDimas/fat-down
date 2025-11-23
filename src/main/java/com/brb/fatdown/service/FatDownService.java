@@ -11,21 +11,19 @@ import java.time.temporal.ChronoUnit;
 public class FatDownService {
 
     //todo на будущее пригодится; +- мои значения для тестов
-    private static final double KCAL_NEAT_PER_MINUTE = 3.0;
-    private static final double KCAL_LISS_PER_MINUTE = 4.5;
-    private static final double KCAL_MED_PER_MINUTE = 6.0;
-    private static final double MET_NEAT = 2.06;
+    public static final double MET_NEAT = 2.06;
     public static final double MET_LISS = 4.5;
     public static final double MET_MED = 6.0;
 
     // Доли энергии, приходящиеся на жир при данной интенсивности (эмпирические)
-    private static final double FAT_SHARE_NEAT = 0.70;   // ~70% при очень лёгкой активности
-    private static final double FAT_SHARE_LISS = 0.55;   // ~55% при LISS
-    private static final double FAT_SHARE_MED = 0.40;    // ~40% при средней интенсивности
+    public static final double FAT_SHARE_NEAT = 0.70;   // ~70% при очень лёгкой активности
+    public static final double FAT_SHARE_LISS = 0.55;   // ~55% при LISS
+    public static final double FAT_SHARE_MED = 0.40;    // ~40% при средней интенсивности
 
     public static final double CARB_SHARE_NEAT = 0.30;
     public static final double CARB_SHARE_LISS = 0.45;
     public static final double CARB_SHARE_MED = 0.60;
+    public static final double MET_CORRECTION = 1.05;
 
     public double calculateBodyFat(final Profile p) {
         double bf;
@@ -53,9 +51,9 @@ public class FatDownService {
         //Общее число ккал = энергия из жира + энергия из гликогена; Какой процент при 95 BPM? Из статьи ~70%.
         //Соответственно, 180 ккал/час = 126 ккал из жира + 54 ккал из гликогена
         // ---- вычисления базовых величин ----
-        double kcalPerHourNeat = MET_NEAT * p.getWeightKg() * 1.05;
-        double kcalPerHourLiss = MET_LISS * p.getWeightKg() * 1.05;
-        double kcalPerHourMed = MET_MED * p.getWeightKg() * 1.05;
+        double kcalPerHourNeat = MET_NEAT * p.getWeightKg() * MET_CORRECTION;
+        double kcalPerHourLiss = MET_LISS * p.getWeightKg() * MET_CORRECTION;
+        double kcalPerHourMed = MET_MED * p.getWeightKg() * MET_CORRECTION;
 
         long days = ChronoUnit.DAYS.between(LocalDate.now(), targetDate);
         if (days <= 0) days = 1;

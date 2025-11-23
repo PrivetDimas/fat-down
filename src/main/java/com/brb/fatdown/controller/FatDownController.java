@@ -32,11 +32,11 @@ public class FatDownController {
     private static final String SLIDER_PATTERN = "%.1f%%";
     private final ProfileRepository repo;
     private final FatDownService service;
-
     public FatDownController(ProfileRepository repo, FatDownService service) {
         this.repo = repo;
         this.service = service;
     }
+
 
     //Top
     @FXML
@@ -119,6 +119,10 @@ public class FatDownController {
     private Label carbMedPerDay;
     @FXML
     private Label tdee;
+    @FXML
+    private TextField minutesToFatAndCarb;
+    @FXML
+    private Label fatAndCarb;
 
 
     private Profile current;
@@ -184,6 +188,16 @@ public class FatDownController {
         saveProfileButton.setOnAction(e -> onSaveProfile());
 
         sliderValueLabel.setText(String.format(SLIDER_PATTERN, targetSlider.getValue()));
+        minutesToFatAndCarb.textProperty().addListener((obs, oldV, newV) -> {
+            if (!newV.matches("\\d*") || newV.length() > 9) {
+                minutesToFatAndCarb.setText(oldV);
+                return;
+            }
+
+            if (!newV.isEmpty()) {
+                convertMinutesToFatAndCarb();
+            }
+        });
     }
 
     private void setCurrentProfile(Profile p) {
@@ -244,6 +258,43 @@ public class FatDownController {
         } catch (Exception _) {
             currentBfLabel.setText("-");
         }
+    }
+
+    private void convertMinutesToFatAndCarb() {
+        //todo ТОЛЬКО ДЛЯ 95 BPM - МЕНЯТЬ
+        int minutes = Integer.parseInt(minutesToFatAndCarb.getText().isEmpty() ? "0" : minutesToFatAndCarb.getText());
+        if (minutes <= 0) {
+            fatAndCarb.setText("-");
+            return;
+        }
+
+        double weightKg;
+        if (current != null) {
+            weightKg = current.getWeightKg();
+        } else {
+            try {
+                weightKg = Double.parseDouble(weightField.getText());
+            } catch (Exception _) {
+                fatAndCarb.setText("Укажите вес");
+                return;
+            }
+        }
+
+        double kcalPerHour = FatDownService.MET_NEAT * weightKg * FatDownService.MET_CORRECTION; // kcal per hour
+
+        double totalKcal = kcalPerHour * (minutes / 60.0);
+
+        double fatKcal = totalKcal * FatDownService.FAT_SHARE_NEAT;
+        double carbKcal = totalKcal * FatDownService.CARB_SHARE_NEAT;
+
+        final double KCAL_PER_GRAM_BODY_FAT = 7.7;
+        final double KCAL_PER_GRAM_CARB = 4.0;
+
+        double fatGrams = fatKcal / KCAL_PER_GRAM_BODY_FAT;
+        double carbGrams = carbKcal / KCAL_PER_GRAM_CARB;
+
+        fatAndCarb.setText(String.format("%s   Всего %.0f ккал → ЖИР: %.0f ккал (%.1f г), УГЛИ: %.0f ккал (%.1f г)",
+                                            formatMinutes(minutes), totalKcal, fatKcal, fatGrams, carbKcal, carbGrams));
     }
 
     private Profile readFieldsToProfileOrNull() {
@@ -389,5 +440,11 @@ public class FatDownController {
         int h = (int) Math.floor(hours);
         int m = (int) Math.round((hours - h) * 60);
         return String.format("%s: %d ч %d мин", ex, h, m);
+    }
+
+    private String formatMinutes(int minutes) {
+        int h = minutes / 60;
+        int m = minutes % 60;
+        return String.format("%d:%02d", h, m);
     }
 }
