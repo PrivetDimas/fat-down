@@ -123,6 +123,10 @@ public class FatDownController {
     private TextField minutesToFatAndCarb;
     @FXML
     private Label fatAndCarb;
+    @FXML
+    private Slider bpmSlider;
+    @FXML
+    private Label bpmValueLabel;
 
 
     private Profile current;
@@ -170,7 +174,11 @@ public class FatDownController {
         ChangeListener<String> fieldListener = (obs, o, n) -> recomputeCurrentBfAndAdjustSlider();
         nameField.textProperty().addListener(fieldListener);
         ageField.textProperty().addListener((obs, oldV, newV) -> {
-            if (!newV.matches("\\d*")) ageField.setText(newV.replaceAll("[^\\d]", ""));
+            if (!newV.matches("\\d*")) {
+                ageField.setText(newV.replaceAll("[^\\d]", ""));
+                return;
+            }
+            updateBpmSliderRange();
         });
         weightField.textProperty().addListener((obs, oldV, newV) -> {
             if (!newV.matches("[\\d,.]*")) weightField.setText(oldV);
@@ -188,6 +196,12 @@ public class FatDownController {
         saveProfileButton.setOnAction(e -> onSaveProfile());
 
         sliderValueLabel.setText(String.format(SLIDER_PATTERN, targetSlider.getValue()));
+        bpmSlider.valueProperty().addListener((obs, oldV, newV) -> {
+            bpmValueLabel.setText(String.format("%.0f", newV.doubleValue()));
+            if (!minutesToFatAndCarb.getText().isEmpty()) {
+                convertMinutesToFatAndCarb();
+            }
+        });
         minutesToFatAndCarb.textProperty().addListener((obs, oldV, newV) -> {
             if (!newV.matches("\\d*") || newV.length() > 9) {
                 minutesToFatAndCarb.setText(oldV);
@@ -196,8 +210,11 @@ public class FatDownController {
 
             if (!newV.isEmpty()) {
                 convertMinutesToFatAndCarb();
+            } else {
+                fatAndCarb.setText("-");
             }
         });
+        updateBpmSliderRange();
     }
 
     private void setCurrentProfile(Profile p) {
@@ -212,6 +229,7 @@ public class FatDownController {
         hipField.setText(String.valueOf(p.getHip()));
 
         recomputeCurrentBfAndAdjustSlider();
+        updateBpmSliderRange();
     }
 
     private void recomputeCurrentBfAndAdjustSlider() {
@@ -261,8 +279,13 @@ public class FatDownController {
     }
 
     private void convertMinutesToFatAndCarb() {
-        //todo ТОЛЬКО ДЛЯ 95 BPM - МЕНЯТЬ
-        int minutes = Integer.parseInt(minutesToFatAndCarb.getText().isEmpty() ? "0" : minutesToFatAndCarb.getText());
+        String minutesText = minutesToFatAndCarb.getText();
+        if (minutesText == null || minutesText.isEmpty()) {
+            fatAndCarb.setText("-");
+            return;
+        }
+
+        int minutes = Integer.parseInt(minutesText);
         if (minutes <= 0) {
             fatAndCarb.setText("-");
             return;
@@ -280,12 +303,14 @@ public class FatDownController {
             }
         }
 
-        double kcalPerHour = FatDownService.MET_NEAT * weightKg * FatDownService.MET_CORRECTION; // kcal per hour
+        double bpm = bpmSlider.getValue();
+        IntensityProfile intensity = intensityForBpm(bpm);
+        double kcalPerHour = intensity.met() * weightKg * FatDownService.MET_CORRECTION; // kcal per hour
 
         double totalKcal = kcalPerHour * (minutes / 60.0);
 
-        double fatKcal = totalKcal * FatDownService.FAT_SHARE_NEAT;
-        double carbKcal = totalKcal * FatDownService.CARB_SHARE_NEAT;
+        double fatKcal = totalKcal * intensity.fatShare();
+        double carbKcal = totalKcal * intensity.carbShare();
 
         final double KCAL_PER_GRAM_BODY_FAT = 7.7;
         final double KCAL_PER_GRAM_CARB = 4.0;
@@ -293,8 +318,58 @@ public class FatDownController {
         double fatGrams = fatKcal / KCAL_PER_GRAM_BODY_FAT;
         double carbGrams = carbKcal / KCAL_PER_GRAM_CARB;
 
-        fatAndCarb.setText(String.format("%s   Всего %.0f ккал → ЖИР: %.0f ккал (%.1f г), УГЛИ: %.0f ккал (%.1f г)",
-                                            formatMinutes(minutes), totalKcal, fatKcal, fatGrams, carbKcal, carbGrams));
+        fatAndCarb.setText(String.format("%s при %.0f BPM   Всего %.0f ккал → ЖИР: %.0f ккал (%.1f г), УГЛИ: %.0f ккал (%.1f г)",
+                                            formatMinutes(minutes), bpm, totalKcal, fatKcal, fatGrams, carbKcal, carbGrams));
+    }
+
+    private void updateBpmSliderRange() {
+        double age;
+        try {
+            age = Double.parseDouble(ageField.getText());
+        } catch (Exception _) {
+            age = 30.0;
+        }
+
+        double maxHeartRate = Math.max(120.0, 220.0 - age);
+        double minBpm = Math.round(maxHeartRate * 0.5);
+        double maxBpm = Math.round(maxHeartRate * 0.7);
+
+        bpmSlider.setMin(minBpm);
+        bpmSlider.setMax(Math.max(minBpm + 1, maxBpm));
+        if (bpmSlider.getValue() < bpmSlider.getMin() || bpmSlider.getValue() > bpmSlider.getMax()) {
+            bpmSlider.setValue((bpmSlider.getMin() + bpmSlider.getMax()) / 2.0);
+        }
+        bpmValueLabel.setText(String.format("%.0f", bpmSlider.getValue()));
+    }
+
+    private IntensityProfile intensityForBpm(double bpm) {
+        if (bpm <= 95) {
+            return new IntensityProfile(FatDownService.MET_NEAT, FatDownService.FAT_SHARE_NEAT, FatDownService.CARB_SHARE_NEAT);
+        }
+        if (bpm <= 110) {
+            double ratio = (bpm - 95) / 15.0;
+            return interpolateIntensity(ratio,
+                    new IntensityProfile(FatDownService.MET_NEAT, FatDownService.FAT_SHARE_NEAT, FatDownService.CARB_SHARE_NEAT),
+                    new IntensityProfile(FatDownService.MET_LISS, FatDownService.FAT_SHARE_LISS, FatDownService.CARB_SHARE_LISS));
+        }
+        if (bpm <= 130) {
+            double ratio = (bpm - 110) / 20.0;
+            return interpolateIntensity(ratio,
+                    new IntensityProfile(FatDownService.MET_LISS, FatDownService.FAT_SHARE_LISS, FatDownService.CARB_SHARE_LISS),
+                    new IntensityProfile(FatDownService.MET_MED, FatDownService.FAT_SHARE_MED, FatDownService.CARB_SHARE_MED));
+        }
+        return new IntensityProfile(FatDownService.MET_MED, FatDownService.FAT_SHARE_MED, FatDownService.CARB_SHARE_MED);
+    }
+
+    private IntensityProfile interpolateIntensity(double ratio, IntensityProfile from, IntensityProfile to) {
+        ratio = Math.clamp(ratio, 0.0, 1.0);
+        double met = from.met() + (to.met() - from.met()) * ratio;
+        double fatShare = from.fatShare() + (to.fatShare() - from.fatShare()) * ratio;
+        double carbShare = from.carbShare() + (to.carbShare() - from.carbShare()) * ratio;
+        return new IntensityProfile(met, fatShare, carbShare);
+    }
+
+    private record IntensityProfile(double met, double fatShare, double carbShare) {
     }
 
     private Profile readFieldsToProfileOrNull() {

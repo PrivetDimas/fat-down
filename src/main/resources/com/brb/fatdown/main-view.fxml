@@ -93,7 +93,8 @@
                 <TextField fx:id="minutesToFatAndCarb" promptText="Введите минуты для конвертации"
                            GridPane.rowIndex="16" maxWidth="150" prefWidth="150"/>
                 <Label text="BPM"/>
-                <Slider prefWidth="150"/>
+                <Slider fx:id="bpmSlider" prefWidth="150"/>
+                <Label fx:id="bpmValueLabel" text="-"/>
             </HBox>
 
             <Label text="Жир и гликоген: " GridPane.rowIndex="17" GridPane.columnIndex="0"/>
